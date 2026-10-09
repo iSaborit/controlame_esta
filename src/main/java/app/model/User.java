@@ -14,18 +14,19 @@ public class User {
     }
 
     public String getId() {
-        return null;
+        return this.id;
     }
 
     public String getUsername() {
-        return null;
+        return this.username;
     }
 
     public void setUsername(String username) {
         // LAYOUT ONLY
+        this.username = username;
     }
 
     public InetAddress getIpAddress() {
-        return null;
+        return this.ipAddress;
     }
 }
