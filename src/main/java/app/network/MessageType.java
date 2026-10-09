@@ -1,0 +1,11 @@
+package app.network;
+
+public enum MessageType {
+    CHECK_USERNAME_REQ,
+    USERNAME_TAKEN,
+    PRESENCE_ANNOUNCE,
+    DISCOVER_CONTACTS_REQ,
+    PRESENCE_ACK,
+    USERNAME_CHANGED,
+    DISCONNECT
+}
