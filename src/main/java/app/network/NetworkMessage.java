@@ -12,15 +12,15 @@ public class NetworkMessage {
     }
 
     public MessageType getType() {
-        return null;
+        return this.type;
     }
 
     public String getSenderId() {
-        return null;
+        return this.senderId;
     }
 
     public String getPayload() {
-        return null;
+        return this.payload;
     }
 
     public byte[] serialize() {
