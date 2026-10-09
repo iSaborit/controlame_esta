@@ -21,8 +21,10 @@ public class User {
         return this.username;
     }
 
-    public void setUsername(String username) {
-        // LAYOUT ONLY
+    public void setUsername(String username) throws InvalidUsernameException {
+        if (!UsernameValidator.isValid(username)) {
+            throw new InvalidUsernameException("Username not valid");
+        }
         this.username = username;
     }
 
