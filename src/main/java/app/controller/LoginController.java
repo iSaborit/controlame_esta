@@ -6,6 +6,8 @@ import app.network.NetworkListener;
 import app.network.NetworkService;
 import app.view.LoginView;
 
+import java.util.Objects;
+
 public class LoginController implements NetworkListener {
     private LoginView loginView;
     private UserProfileModel userModel;
@@ -19,14 +21,28 @@ public class LoginController implements NetworkListener {
 
     public void handleLoginSubmit(String requestedUsername) {
         // LAYOUT ONLY: validate locally, then networkService.checkUsernameUniqueness(...)
+        String emptyString = "";
+        if (requestedUsername.contains(" ") || Objects.equals(requestedUsername, emptyString)) {
+            // ERROR : invalid format
+            System.err.println("[ERROR] [LoginController]: Invalid username format.");
+        }
+
+        networkService.checkUsernameUniqueness(requestedUsername);
     }
 
     public void onUsernameValidated(String username) {
         // LAYOUT ONLY
+        this.userModel.getCurrentUser().setUsername(username);
+
+        // + broadcast:
+        this.networkService.startPresenceBroadcast(this.userModel.getCurrentUser());
+        // + contact discovery request
+        this.networkService.sendDiscoverRequest();
     }
 
     public void onUsernameRejected(String reason) {
         // LAYOUT ONLY
+        System.err.println("[ERROR] [LoginController] Username rejected: " + reason);
     }
 
     @Override
