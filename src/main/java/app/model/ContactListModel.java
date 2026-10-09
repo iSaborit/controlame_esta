@@ -1,6 +1,7 @@
 package app.model;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class ContactListModel {
     private java.util.List<User> activeContacts;
@@ -13,18 +14,25 @@ public class ContactListModel {
 
     public void addContact(User user) {
         // LAYOUT ONLY
+        this.activeContacts.add(user);
     }
 
     public void removeContact(String userId) {
         // LAYOUT ONLY
+        this.activeContacts.removeIf(element -> Objects.equals(element.getId(), userId));
     }
 
     public void updateContactUsername(String userId, String newUsername) {
         // LAYOUT ONLY
+        for (User element : this.activeContacts) {
+            if (Objects.equals(element.getId(), userId)) {
+                element.setUsername(newUsername);
+            }
+        }
     }
 
     public java.util.List<User> getContacts() {
-        return null;
+        return this.activeContacts;
     }
 
     public void addObserver(ContactListObserver observer) {
