@@ -5,18 +5,20 @@ public class UserProfileModel {
     private boolean connected;
 
     public User getCurrentUser() {
-        return null;
+        return currentUser;
     }
 
     public void setCurrentUser(User user) {
         // LAYOUT ONLY
+        this.currentUser = user;
     }
 
     public boolean isConnected() {
-        return false;
+        return this.connected;
     }
 
     public void setConnected(boolean connected) {
         // LAYOUT ONLY
+        this.connected = connected;
     }
 }
