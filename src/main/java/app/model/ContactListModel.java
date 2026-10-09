@@ -26,7 +26,11 @@ public class ContactListModel {
         // LAYOUT ONLY
         for (User element : this.activeContacts) {
             if (Objects.equals(element.getId(), userId)) {
-                element.setUsername(newUsername);
+                try {
+                    element.setUsername(newUsername);
+                } catch (Exception e) {
+                    System.err.println("[CONTACT LIST MODEL] Should not crash, but... " + e);
+                }
             }
         }
     }

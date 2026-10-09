@@ -1,7 +1,9 @@
 package app.controller;
 
+import app.model.InvalidUsernameException;
 import app.model.User;
 import app.model.UserProfileModel;
+import app.model.UsernameValidator;
 import app.network.NetworkListener;
 import app.network.NetworkService;
 import app.view.LoginView;
@@ -20,18 +22,16 @@ public class LoginController implements NetworkListener {
     }
 
     public void handleLoginSubmit(String requestedUsername) {
-        // LAYOUT ONLY: validate locally, then networkService.checkUsernameUniqueness(...)
-        String emptyString = "";
-        if (requestedUsername.contains(" ") || Objects.equals(requestedUsername, emptyString)) {
-            // ERROR : invalid format
-            System.err.println("[ERROR] [LoginController]: Invalid username format.");
-        }
+        // LAYOUT ONLY: validate locally, then
+        // networkService.checkUsernameUniqueness(...)
+
+        UsernameValidator.isValid(requestedUsername);
 
         networkService.checkUsernameUniqueness(requestedUsername);
     }
 
-    public void onUsernameValidated(String username) {
-        // LAYOUT ONLY
+    public void onUsernameValidated(String username) throws InvalidUsernameException {
+        // this function can throw... maybe checking here first?
         this.userModel.getCurrentUser().setUsername(username);
 
         // + broadcast:
