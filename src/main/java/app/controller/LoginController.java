@@ -24,9 +24,7 @@ public class LoginController implements NetworkListener {
     public void handleLoginSubmit(String requestedUsername) {
         // LAYOUT ONLY: validate locally, then
         // networkService.checkUsernameUniqueness(...)
-
         UsernameValidator.isValid(requestedUsername);
-
         networkService.checkUsernameUniqueness(requestedUsername);
     }
 
@@ -37,7 +35,7 @@ public class LoginController implements NetworkListener {
         // + broadcast:
         this.networkService.startPresenceBroadcast(this.userModel.getCurrentUser());
         // + contact discovery request
-        this.networkService.sendDiscoverRequest();
+        this.networkService.sendDiscoverRequest(this.userModel.getCurrentUser().getId());
     }
 
     public void onUsernameRejected(String reason) {

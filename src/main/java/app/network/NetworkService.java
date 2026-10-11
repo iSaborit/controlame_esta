@@ -7,9 +7,9 @@ public interface NetworkService {
 
     void startPresenceBroadcast(User localUser);
 
-    void sendDiscoverRequest();
+    void sendDiscoverRequest(String localUserId);
 
-    void sendUsernameChange(String oldUsername, String newUsername);
+    void sendUsernameChange(String localUserId, String oldUsername, String newUsername);
 
     void sendDisconnect(User localUser);
 
