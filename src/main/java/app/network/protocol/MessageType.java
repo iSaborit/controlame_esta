@@ -1,4 +1,4 @@
-package app.network;
+package app.network.protocol;
 
 public enum MessageType {
     CHECK_USERNAME_REQ,

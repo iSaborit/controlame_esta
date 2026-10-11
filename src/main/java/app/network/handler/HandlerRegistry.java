@@ -1,6 +1,6 @@
 package app.network.handler;
 
-import app.network.MessageType;
+import app.network.protocol.MessageType;
 import app.network.NetworkListener;
 import java.util.EnumMap;
 import java.util.Map;

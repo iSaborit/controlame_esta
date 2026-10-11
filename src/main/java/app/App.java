@@ -4,7 +4,7 @@ import app.controller.ContactController;
 import app.controller.LoginController;
 import app.model.ContactListModel;
 import app.model.UserProfileModel;
-import app.network.MessageType;
+import app.network.protocol.MessageType;
 import app.network.NetworkManager;
 import app.network.handler.HandlerRegistry;
 import app.network.handler.MessageHandler;
