@@ -9,7 +9,7 @@ public interface NetworkService {
 
     void sendDiscoverRequest(String localUserId);
 
-    void sendUsernameChange(String localUserId, String oldUsername, String newUsername);
+    void sendUsernameChange(User user, String oldUsername, String newUsername);
 
     void sendDisconnect(User localUser);
 
