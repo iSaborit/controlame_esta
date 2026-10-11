@@ -3,6 +3,10 @@ package app.network;
 import app.AppConfig;
 import app.model.User;
 import app.network.handler.MessageHandler;
+import app.network.protocol.MessageEnvelope;
+import app.network.protocol.MessageType;
+import app.network.protocol.PacketCodec;
+import app.network.protocol.UdpCodec;
 
 import java.io.IOException;
 import java.net.*;
@@ -10,6 +14,8 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class NetworkManager implements NetworkService {
     private DatagramSocket udpSocket;
@@ -19,9 +25,21 @@ public class NetworkManager implements NetworkService {
     private final Map<MessageType, MessageHandler> handlers = new EnumMap<>(MessageType.class);
     private final List<NetworkListener> listeners = new ArrayList<>();
 
+    private final PacketCodec codec;
+    private final AtomicLong seq;
+
     public NetworkManager(AppConfig config) {
         this.config = config;
         this.port = config.getPort();
+        this.codec = new UdpCodec();
+        this.seq = new AtomicLong();
+    }
+
+    public NetworkManager(AppConfig config, PacketCodec codec) {
+        this.config = config;
+        this.port = config.getPort();
+        this.codec = codec;
+        this.seq = new AtomicLong();
     }
 
     public void registerHandler(MessageType type, MessageHandler handler) {
@@ -53,51 +71,35 @@ public class NetworkManager implements NetworkService {
 
     @Override
     public void startPresenceBroadcast(User localUser) {
-        NetworkMessage msg = new NetworkMessage(
-                MessageType.PRESENCE_ANNOUNCE,
-                localUser.getId(),
+        MessageEnvelope msg = MessageEnvelope.announce(localUser.getId(), seq.incrementAndGet(),
                 localUser.getUsername());
         sendBroadcast(msg);
     }
 
     @Override
     public void sendDiscoverRequest(String localUserId) {
-        NetworkMessage msg = new NetworkMessage(
-                MessageType.DISCOVER_CONTACTS_REQ,
-                localUserId,
-                ""
-        );
+        sendBroadcast(MessageEnvelope.discover(localUserId, seq.incrementAndGet()));
+    }
+
+    public void sendUsernameChange(User user, String oldUsername, String newUsername) {
+        MessageEnvelope msg = MessageEnvelope.usernameChange(user.getId(), seq.incrementAndGet(), oldUsername,
+                newUsername);
         sendBroadcast(msg);
     }
 
     @Override
-    public void sendUsernameChange(String localUserId, String oldUsername, String newUsername) {
-        // Format du message : "ancienPseudo:nouveauPseudo"
-        String payload = oldUsername + ":" + newUsername;
+    public void sendDisconnect(User user) {
+        if (user == null)
+            return;
 
-        NetworkMessage msg = new NetworkMessage(
-                MessageType.USERNAME_CHANGED,
-                localUserId,
-                payload
-        );
-        sendBroadcast(msg);
-    }
-
-    @Override
-    public void sendDisconnect(User localUser) {
-        if (localUser == null) return;
-
-        NetworkMessage msg = new NetworkMessage(
-                MessageType.DISCONNECT,
-                localUser.getId(),
-                localUser.getUsername()
-        );
+        MessageEnvelope msg = MessageEnvelope.bye(user.getId(), seq.incrementAndGet(), user.getUsername());
         sendBroadcast(msg);
     }
 
     @Override
     public void startListening() {
-        if (listening) return;
+        if (listening)
+            return;
 
         try {
             // On ouvre le socket UDP sur le port configuré
@@ -109,7 +111,7 @@ public class NetworkManager implements NetworkService {
             Thread receiveThread = new Thread(() -> {
                 while (listening) {
                     try {
-                        byte[] buf = new byte[1024]; // buffer pour la réception
+                        byte[] buf = new byte[8192]; // JSON envelopes exceed the old 1024B layout
                         DatagramPacket packet = new DatagramPacket(buf, buf.length);
                         udpSocket.receive(packet); // Opération bloquante
 
@@ -142,30 +144,28 @@ public class NetworkManager implements NetworkService {
         }
     }
 
-    private void sendPacket(NetworkMessage message, InetAddress destinationAddress, int destinationPort) {
-        try {
-            // On sérialise notre objet NetworkMessage en tableau d'octets
-            byte[] bytesToSend = message.serialize();
-            if (bytesToSend == null) return;
+    private void sendPacket(MessageEnvelope message, InetAddress destinationAddress, int destinationPort) {
+        Optional<byte[]> bytesToSend = codec.encode(message);
+        if (bytesToSend.isEmpty()) return;
 
+        try {
             // On prépare le paquet UDP
             DatagramPacket outPacket = new DatagramPacket(
-                    bytesToSend,
-                    bytesToSend.length,
+                    bytesToSend.get(),
+                    bytesToSend.get().length,
                     destinationAddress,
-                    destinationPort
-            );
+                    destinationPort);
 
             // On l'envoie sur le socket UDP existant
             if (udpSocket != null && !udpSocket.isClosed()) {
                 udpSocket.send(outPacket);
             }
         } catch (IOException e) {
-            System.err.println("Erreur lors de l'envoi du message : " + e.getMessage());
+            System.err.println("error sending message : " + e.getMessage());
         }
     }
 
-    private void sendBroadcast(NetworkMessage message) {
+    private void sendBroadcast(MessageEnvelope message) {
         try {
             InetAddress broadcastAddress = InetAddress.getByName("255.255.255.255");
             sendPacket(message, broadcastAddress, this.port);
@@ -175,10 +175,16 @@ public class NetworkManager implements NetworkService {
     }
 
     private void processIncomingPacket(DatagramPacket packet) {
-        NetworkMessage msg = NetworkMessage.deserialize(packet.getData());
-        MessageHandler handler = handlers.get(msg.getType());
-        if (handler != null) {
+        Optional<MessageEnvelope> decoded = codec.decode(packet.getData(), packet.getLength());
+        if (decoded.isEmpty()) return;
+
+        MessageEnvelope msg = decoded.get();
+        MessageHandler handler = handlers.get(msg.type());
+        if (handler == null) return;
+        try {
             handler.handle(msg, (InetSocketAddress) packet.getSocketAddress());
+        } catch (Exception e) {
+            System.err.println("[NetworkManager] handler failed for " + msg.type() + ": " + e);
         }
     }
 }

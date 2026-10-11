@@ -1,8 +1,8 @@
 package app.network.handler;
 
-import app.network.NetworkMessage;
+import app.network.protocol.MessageEnvelope;
 import java.net.InetSocketAddress;
 
 public interface MessageHandler {
-    void handle(NetworkMessage msg, InetSocketAddress from);
+    void handle(MessageEnvelope msg, InetSocketAddress from);
 }

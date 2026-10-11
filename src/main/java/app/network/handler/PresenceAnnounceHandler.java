@@ -1,7 +1,7 @@
 package app.network.handler;
 
 import app.network.NetworkListener;
-import app.network.NetworkMessage;
+import app.network.protocol.MessageEnvelope;
 import java.net.InetSocketAddress;
 
 public class PresenceAnnounceHandler implements MessageHandler {
@@ -12,7 +12,7 @@ public class PresenceAnnounceHandler implements MessageHandler {
     }
 
     @Override
-    public void handle(NetworkMessage msg, InetSocketAddress from) {
+    public void handle(MessageEnvelope msg, InetSocketAddress from) {
         // LAYOUT ONLY: build User from msg + from, then listener.onPeerAnnounced(user)
     }
 }

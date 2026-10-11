@@ -1,7 +1,7 @@
 package app.network.handler;
 
 import app.network.NetworkListener;
-import app.network.NetworkMessage;
+import app.network.protocol.MessageEnvelope;
 import java.net.InetSocketAddress;
 
 public class DiscoverHandler implements MessageHandler {
@@ -12,7 +12,7 @@ public class DiscoverHandler implements MessageHandler {
     }
 
     @Override
-    public void handle(NetworkMessage msg, InetSocketAddress from) {
+    public void handle(MessageEnvelope msg, InetSocketAddress from) {
         // LAYOUT ONLY: answer PRESENCE_ACK, then listener.onPeerAnnounced(user)
     }
 }

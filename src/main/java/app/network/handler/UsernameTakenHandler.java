@@ -1,7 +1,8 @@
 package app.network.handler;
 
 import app.network.NetworkListener;
-import app.network.NetworkMessage;
+import app.network.protocol.MessageEnvelope;
+
 import java.net.InetSocketAddress;
 
 public class UsernameTakenHandler implements MessageHandler {
@@ -12,7 +13,7 @@ public class UsernameTakenHandler implements MessageHandler {
     }
 
     @Override
-    public void handle(NetworkMessage msg, InetSocketAddress from) {
+    public void handle(MessageEnvelope msg, InetSocketAddress from) {
         // LAYOUT ONLY: listener.onUsernameCheckResult(false)
     }
 }

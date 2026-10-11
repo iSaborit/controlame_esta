@@ -17,3 +17,7 @@ target/
 # OS
 .DS_Store
 Thumbs.db
+
+# Personal tooling (tuxedo todo.txt)
+todo.txt
+done.txt
