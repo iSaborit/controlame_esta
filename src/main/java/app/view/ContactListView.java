@@ -6,8 +6,10 @@ import java.util.List;
 import java.util.function.Consumer;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
+import javafx.scene.layout.VBox;
 
 public class ContactListView implements ContactListObserver {
     private ListView<String> contactListView;
@@ -17,11 +19,18 @@ public class ContactListView implements ContactListObserver {
     private Consumer<String> onChangeUsername;
     private Runnable onLogout;
 
+    private final Parent rootNode;
+
     public ContactListView() {
         this.observableContacts = FXCollections.observableArrayList();
         this.contactListView = new ListView<>(observableContacts);
         this.changeUsernameButton = new Button();
         this.logoutButton = new Button();
+        this.rootNode = new VBox(10, contactListView, changeUsernameButton, logoutButton);
+    }
+
+    public Parent getRoot() {
+        return this.rootNode;
     }
 
     public void setOnChangeUsername(Consumer<String> handler) {

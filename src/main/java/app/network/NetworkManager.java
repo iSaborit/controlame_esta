@@ -148,6 +148,7 @@ public class NetworkManager implements NetworkService {
         sendBroadcast(MessageEnvelope.discover(localUserId, seq.incrementAndGet()));
     }
 
+    @Override
     public void sendUsernameChange(User user, String oldUsername, String newUsername) {
         MessageEnvelope msg = MessageEnvelope.usernameChange(user.getId(), seq.incrementAndGet(), oldUsername,
                 newUsername);

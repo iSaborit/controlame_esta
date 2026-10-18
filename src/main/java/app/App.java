@@ -41,6 +41,10 @@ public class App extends Application {
         contactView.setOnChangeUsername(contactController::handleChangeUsername);
         contactView.setOnLogout(contactController::handleLogout);
 
+        loginController.setOnLoginSuccess(() -> primaryStage.getScene().setRoot(contactView.getRoot()));
+
+        networkManager.startListening();
+
         primaryStage.setScene(new Scene(loginView.getRoot(), 300, 150));
         primaryStage.setTitle("Login");
         primaryStage.show();
