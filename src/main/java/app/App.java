@@ -33,7 +33,8 @@ public class App extends Application {
         // Flow: network -> controller -> model -> view (no direct network -> model)
         networkManager.addNetworkListener(loginController);
         networkManager.addNetworkListener(contactController);
-        Map<MessageType, MessageHandler> handlers = HandlerRegistry.build(contactController, networkManager);
+        Map<MessageType, MessageHandler> handlers = HandlerRegistry.build(contactController, networkManager,
+                userModel, contactListModel);
         networkManager.registerAllHandlers(handlers);
 
         loginView.setOnLoginSubmit(loginController::handleLoginSubmit);

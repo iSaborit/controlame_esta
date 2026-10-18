@@ -85,6 +85,16 @@ public class NetworkManager implements NetworkService {
         }
     }
 
+    @Override
+    public void sendUsernameTaken(InetSocketAddress to, long forSeq, String requestedUsername,
+                                  String by, String responderId) {
+        MessageEnvelope reply = MessageEnvelope.taken(
+                responderId, this.seq.incrementAndGet(), forSeq, requestedUsername, by
+        );
+
+        sendPacket(reply, to.getAddress(), to.getPort());
+    }
+
     private void expireUsernameCheck() {
         Pending pending = this.pendingCheck.get();
         if (pending == null || !this.pendingCheck.compareAndSet(pending, null)) {

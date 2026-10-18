@@ -2,6 +2,8 @@ package app.network;
 
 import app.model.User;
 
+import java.net.InetSocketAddress;
+
 public interface NetworkService {
     void checkUsernameUniqueness(String username);
 
@@ -22,4 +24,6 @@ public interface NetworkService {
     void removeNetworkListener(NetworkListener listener);
 
     void onUsernameTaken(String username, Long inReplyTo);
+
+    void sendUsernameTaken(InetSocketAddress to, long forSeq, String requestedUsername, String by, String responderId);
 }
