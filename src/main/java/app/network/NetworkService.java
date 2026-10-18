@@ -20,4 +20,6 @@ public interface NetworkService {
     void addNetworkListener(NetworkListener listener);
 
     void removeNetworkListener(NetworkListener listener);
+
+    void onUsernameTaken(String username, Long inReplyTo);
 }
