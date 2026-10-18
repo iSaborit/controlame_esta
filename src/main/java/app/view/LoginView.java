@@ -13,33 +13,42 @@ public class LoginView {
     private Label errorLabel;
     private Consumer<String> onLoginSubmit;
 
+    private final Parent rootNode;
+
     public LoginView() {
         this.usernameField = new TextField();
         this.submitButton = new Button();
         this.errorLabel = new Label();
+        this.rootNode = new VBox(10, usernameField, submitButton, errorLabel);
     }
 
     public void setOnLoginSubmit(Consumer<String> handler) {
         // LAYOUT ONLY
+        this.onLoginSubmit = handler;
+        // TODO: finish implementing this method
+    }
+
+    public void setSubmitDisabled(boolean disabled) {
+        submitButton.setDisable(disabled);
     }
 
     public Parent getRoot() {
-        return new VBox(10, usernameField, submitButton, errorLabel);
+        return rootNode;
     }
 
     public String getUsernameInput() {
-        return null;
+        return usernameField.getText();
     }
 
     public void showError(String message) {
-        // LAYOUT ONLY
+        errorLabel.setText(message);
     }
 
     public void clearError() {
-        // LAYOUT ONLY
+        errorLabel.setText("");
     }
 
     public void hideView() {
-        // LAYOUT ONLY
+        rootNode.setVisible(false);
     }
 }
