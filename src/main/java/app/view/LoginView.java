@@ -17,15 +17,17 @@ public class LoginView {
 
     public LoginView() {
         this.usernameField = new TextField();
-        this.submitButton = new Button();
+        this.submitButton = new Button("Login");
         this.errorLabel = new Label();
         this.rootNode = new VBox(10, usernameField, submitButton, errorLabel);
     }
 
     public void setOnLoginSubmit(Consumer<String> handler) {
-        // LAYOUT ONLY
         this.onLoginSubmit = handler;
-        // TODO: finish implementing this method
+        this.submitButton.setOnAction(event -> {
+            if (this.onLoginSubmit == null) return;
+            this.onLoginSubmit.accept(getUsernameInput());
+        });
     }
 
     public void setSubmitDisabled(boolean disabled) {
