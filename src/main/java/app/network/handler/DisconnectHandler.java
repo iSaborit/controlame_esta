@@ -13,6 +13,7 @@ public class DisconnectHandler implements MessageHandler {
 
     @Override
     public void handle(MessageEnvelope msg, InetSocketAddress from) {
-        // LAYOUT ONLY: listener.onPeerDisconnected(senderId)
+        // listener.onPeerDisconnected(senderId)
+        this.listener.onPeerDisconnected(msg.from());
     }
 }
