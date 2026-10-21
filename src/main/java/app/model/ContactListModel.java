@@ -13,24 +13,45 @@ public class ContactListModel {
     }
 
     public void addContact(User user) {
-        // LAYOUT ONLY
+        if (user == null) return;
+
+        for (User contact : this.activeContacts) {
+            if (Objects.equals(contact.getId(), user.getId())) {
+                return; // user already known
+            }
+        }
+
         this.activeContacts.add(user);
+        notifyContactAdded(user);
     }
 
     public void removeContact(String userId) {
-        // LAYOUT ONLY
-        this.activeContacts.removeIf(element -> Objects.equals(element.getId(), userId));
+        if (userId == null) return;
+
+        User removed = null;
+        for (User contact : this.activeContacts) {
+            if (Objects.equals(contact.getId(), userId)) {
+                removed = contact;
+                break;
+            }
+        }
+        if (removed == null) return;
+
+        this.activeContacts.remove(removed);
+        notifyContactRemoved(removed);
     }
 
     public void updateContactUsername(String userId, String newUsername) {
-        // LAYOUT ONLY
         for (User element : this.activeContacts) {
             if (Objects.equals(element.getId(), userId)) {
                 try {
                     element.setUsername(newUsername);
                 } catch (Exception e) {
                     System.err.println("[CONTACT LIST MODEL] Should not crash, but... " + e);
+                    return;
                 }
+                notifyContactUpdated(element);
+                return;
             }
         }
     }
@@ -40,22 +61,30 @@ public class ContactListModel {
     }
 
     public void addObserver(ContactListObserver observer) {
-        // LAYOUT ONLY
+        if (observer != null && !this.observers.contains(observer)) {
+            this.observers.add(observer);
+        }
     }
 
     public void removeObserver(ContactListObserver observer) {
-        // LAYOUT ONLY
+        this.observers.remove(observer);
     }
 
     private void notifyContactAdded(User user) {
-        // LAYOUT ONLY
+        for (ContactListObserver observer : this.observers) {
+            observer.onContactAdded(user);
+        }
     }
 
     private void notifyContactUpdated(User user) {
-        // LAYOUT ONLY
+        for (ContactListObserver observer : this.observers) {
+            observer.onContactUpdated(user);
+        }
     }
 
     private void notifyContactRemoved(User user) {
-        // LAYOUT ONLY
+        for (ContactListObserver observer : this.observers) {
+            observer.onContactRemoved(user);
+        }
     }
 }
