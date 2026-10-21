@@ -50,6 +50,10 @@ public class LoginView {
         errorLabel.setText("");
     }
 
+    public void showView() {
+        this.rootNode.setVisible(true);
+    }
+
     public void hideView() {
         rootNode.setVisible(false);
     }
