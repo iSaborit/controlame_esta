@@ -15,6 +15,8 @@ public class LoginController implements NetworkListener {
     private NetworkService networkService;
     private String pendingUsername;
 
+    private boolean loginPending;
+
     private Runnable onLoginSuccess;
 
     public LoginController(LoginView loginView, UserProfileModel userModel, NetworkService networkService) {
@@ -28,8 +30,7 @@ public class LoginController implements NetworkListener {
     }
 
     public void handleLoginSubmit(String requestedUsername) {
-        // LAYOUT ONLY: validate locally, then
-        // networkService.checkUsernameUniqueness(...)
+        // validate locally, then networkService.checkUsernameUniqueness(...)
         if (!UsernameValidator.isValid(requestedUsername)) {
             loginView.showError("Invalid username.");
             return;
@@ -39,6 +40,7 @@ public class LoginController implements NetworkListener {
         loginView.clearError();
         loginView.setSubmitDisabled(true); // while waiting for answer
 
+        this.loginPending = true;
         networkService.checkUsernameUniqueness(requestedUsername);
     }
 
@@ -75,6 +77,9 @@ public class LoginController implements NetworkListener {
 
     @Override
     public void onUsernameCheckResult(boolean available) {
+        if (!this.loginPending) return; // ignore no-login requests (e.g. rename request)
+        this.loginPending = false;
+
         loginView.setSubmitDisabled(false); // re-activate button
 
         if (available) {
