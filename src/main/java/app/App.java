@@ -39,7 +39,14 @@ public class App extends Application {
 
         loginView.setOnLoginSubmit(loginController::handleLoginSubmit);
         contactView.setOnChangeUsername(contactController::handleChangeUsername);
-        contactView.setOnLogout(contactController::handleLogout);
+
+        contactView.setOnLogout(() -> {
+            contactController.handleLogout();
+            contactView.clearError();
+            loginView.clearError();
+            loginView.showView();
+            primaryStage.getScene().setRoot(loginView.getRoot());
+        });
 
         loginController.setOnLoginSuccess(() -> primaryStage.getScene().setRoot(contactView.getRoot()));
 
