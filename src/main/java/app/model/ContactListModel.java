@@ -1,6 +1,7 @@
 package app.model;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class ContactListModel {
@@ -53,6 +54,14 @@ public class ContactListModel {
                 notifyContactUpdated(element);
                 return;
             }
+        }
+    }
+
+    public void clear() {
+        List<User> tmp = List.copyOf(this.activeContacts);
+        this.activeContacts.clear();
+        for (User contact : tmp) {
+            notifyContactRemoved(contact);
         }
     }
 
