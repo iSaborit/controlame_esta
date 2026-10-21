@@ -11,10 +11,7 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.Parent;
-import javafx.scene.control.Button;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 
 public class ContactListView implements ContactListObserver {
@@ -25,6 +22,7 @@ public class ContactListView implements ContactListObserver {
     private Consumer<String> onChangeUsername;
     private Runnable onLogout;
 
+    private Label errorLabel;
     private final Parent rootNode;
 
     public ContactListView() {
@@ -32,7 +30,8 @@ public class ContactListView implements ContactListObserver {
         this.contactListView = new ListView<>(observableContacts);
         this.changeUsernameButton = new Button("Change Username");
         this.logoutButton = new Button("Logout");
-        this.rootNode = new VBox(10, contactListView, changeUsernameButton, logoutButton);
+        this.errorLabel = new Label();
+        this.rootNode = new VBox(10, contactListView, changeUsernameButton, logoutButton, errorLabel);
 
         contactListView.setCellFactory(lv -> new ListCell<User>() {
             @Override
@@ -110,5 +109,12 @@ public class ContactListView implements ContactListObserver {
         Platform.runLater(() -> {
             this.observableContacts.removeIf(contact -> Objects.equals(contact.getId(), user.getId()));
         });
+    }
+
+    public void showError(String message) {
+        this.errorLabel.setText(message);
+    }
+    public void clearError() {
+        this.errorLabel.setText("");
     }
 }
