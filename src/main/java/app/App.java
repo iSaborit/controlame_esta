@@ -33,12 +33,24 @@ public class App extends Application {
         // Flow: network -> controller -> model -> view (no direct network -> model)
         networkManager.addNetworkListener(loginController);
         networkManager.addNetworkListener(contactController);
-        Map<MessageType, MessageHandler> handlers = HandlerRegistry.build(loginController, contactController);
+        Map<MessageType, MessageHandler> handlers = HandlerRegistry.build(contactController, networkManager,
+                userModel, contactListModel);
         networkManager.registerAllHandlers(handlers);
 
         loginView.setOnLoginSubmit(loginController::handleLoginSubmit);
         contactView.setOnChangeUsername(contactController::handleChangeUsername);
-        contactView.setOnLogout(contactController::handleLogout);
+
+        contactView.setOnLogout(() -> {
+            contactController.handleLogout();
+            contactView.clearError();
+            loginView.clearError();
+            loginView.showView();
+            primaryStage.getScene().setRoot(loginView.getRoot());
+        });
+
+        loginController.setOnLoginSuccess(() -> primaryStage.getScene().setRoot(contactView.getRoot()));
+
+        networkManager.startListening();
 
         primaryStage.setScene(new Scene(loginView.getRoot(), 300, 150));
         primaryStage.setTitle("Login");

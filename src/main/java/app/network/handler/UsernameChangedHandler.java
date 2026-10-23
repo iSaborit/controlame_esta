@@ -13,6 +13,9 @@ public class UsernameChangedHandler implements MessageHandler {
 
     @Override
     public void handle(MessageEnvelope msg, InetSocketAddress from) {
-        // LAYOUT ONLY: listener.onPeerRenamed(senderId, newName)
+        // listener.onPeerRenamed(senderId, newName)
+        if (msg.payload() == null || msg.payload().newUsername() == null) return;
+
+        this.listener.onPeerRenamed(msg.from(), msg.payload().newUsername());
     }
 }

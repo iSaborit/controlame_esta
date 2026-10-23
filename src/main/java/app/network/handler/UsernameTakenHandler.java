@@ -1,19 +1,19 @@
 package app.network.handler;
 
-import app.network.NetworkListener;
+import app.network.NetworkService;
 import app.network.protocol.MessageEnvelope;
 
 import java.net.InetSocketAddress;
 
 public class UsernameTakenHandler implements MessageHandler {
-    private final NetworkListener listener;
+    private final NetworkService networkService;
 
-    public UsernameTakenHandler(NetworkListener listener) {
-        this.listener = listener;
+    public UsernameTakenHandler(NetworkService networkService) {
+        this.networkService = networkService;
     }
 
     @Override
     public void handle(MessageEnvelope msg, InetSocketAddress from) {
-        // LAYOUT ONLY: listener.onUsernameCheckResult(false)
+        networkService.onUsernameTaken(msg.payload().username(), msg.inReplyTo());
     }
 }

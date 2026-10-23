@@ -1,6 +1,5 @@
 package app.controller;
 
-import app.model.InvalidUsernameException;
 import app.model.User;
 import app.model.UserProfileModel;
 import app.model.UsernameValidator;
@@ -8,12 +7,17 @@ import app.network.NetworkListener;
 import app.network.NetworkService;
 import app.view.LoginView;
 
-import java.util.Objects;
+import java.util.UUID;
 
 public class LoginController implements NetworkListener {
     private LoginView loginView;
     private UserProfileModel userModel;
     private NetworkService networkService;
+    private String pendingUsername;
+
+    private boolean loginPending;
+
+    private Runnable onLoginSuccess;
 
     public LoginController(LoginView loginView, UserProfileModel userModel, NetworkService networkService) {
         this.loginView = loginView;
@@ -21,26 +25,39 @@ public class LoginController implements NetworkListener {
         this.networkService = networkService;
     }
 
+    public void setOnLoginSuccess(Runnable r) {
+        this.onLoginSuccess = r;
+    }
+
     public void handleLoginSubmit(String requestedUsername) {
-        // LAYOUT ONLY: validate locally, then
-        // networkService.checkUsernameUniqueness(...)
-        UsernameValidator.isValid(requestedUsername);
+        // validate locally, then networkService.checkUsernameUniqueness(...)
+        if (!UsernameValidator.isValid(requestedUsername)) {
+            loginView.showError("Invalid username.");
+            return;
+        }
+
+        this.pendingUsername = requestedUsername;
+        loginView.clearError();
+        loginView.setSubmitDisabled(true); // while waiting for answer
+
+        this.loginPending = true;
         networkService.checkUsernameUniqueness(requestedUsername);
     }
 
-    public void onUsernameValidated(String username) throws InvalidUsernameException {
-        // this function can throw... maybe checking here first?
-        this.userModel.getCurrentUser().setUsername(username);
+    public void onUsernameValidated(String username) {
+        User me = new User(UUID.randomUUID().toString(), username, null); // UUID ici
+        this.userModel.setCurrentUser(me);
+        this.userModel.setConnected(true);
 
-        // + broadcast:
-        this.networkService.startPresenceBroadcast(this.userModel.getCurrentUser());
-        // + contact discovery request
-        this.networkService.sendDiscoverRequest(this.userModel.getCurrentUser().getId());
+        this.networkService.startPresenceBroadcast(me);
+        this.networkService.sendDiscoverRequest(me.getId());
+
+        loginView.hideView(); // redondant?
+        this.onLoginSuccess.run();
     }
 
     public void onUsernameRejected(String reason) {
-        // LAYOUT ONLY
-        System.err.println("[ERROR] [LoginController] Username rejected: " + reason);
+        loginView.showError(reason);
     }
 
     @Override
@@ -60,6 +77,15 @@ public class LoginController implements NetworkListener {
 
     @Override
     public void onUsernameCheckResult(boolean available) {
-        // LAYOUT ONLY: route to onUsernameValidated / onUsernameRejected
+        if (!this.loginPending) return; // ignore no-login requests (e.g. rename request)
+        this.loginPending = false;
+
+        loginView.setSubmitDisabled(false); // re-activate button
+
+        if (available) {
+            this.onUsernameValidated(pendingUsername);
+        } else {
+            this.onUsernameRejected("Username is already in use.");
+        }
     }
 }
