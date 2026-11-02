@@ -233,12 +233,39 @@ public class NetworkManager implements NetworkService {
         }
     }
 
-    private void sendBroadcast(MessageEnvelope message) {
+    private Set<InetAddress> getBroadcastAddress() {
+        Set<InetAddress> broadcastAddresses = new LinkedHashSet<>();
+
         try {
-            InetAddress broadcastAddress = InetAddress.getByName("255.255.255.255");
-            sendPacket(message, broadcastAddress, this.port);
-        } catch (UnknownHostException e) {
-            System.err.println("Erreur lors du broadcast du message : " + e);
+            for (NetworkInterface ni : Collections.list(NetworkInterface.getNetworkInterfaces())) {
+                if (!ni.isUp() || ni.isLoopback() || ni.isPointToPoint()) continue;
+
+                for (InterfaceAddress ia : ni.getInterfaceAddresses()) {
+                    InetAddress broadcast = ia.getBroadcast();
+                    if (ia.getAddress() instanceof Inet4Address && broadcast != null) {
+                        broadcastAddresses.add(broadcast);
+                    }
+                }
+            }
+        } catch (SocketException e) {
+            System.err.println("SocketException : " + e);
+        }
+
+        return broadcastAddresses;
+    }
+
+    private void sendBroadcast(MessageEnvelope message) {
+        Set<InetAddress> broadcastAddresses = getBroadcastAddress();
+        if (broadcastAddresses.isEmpty()) {
+            InetAddress loopback = InetAddress.getLoopbackAddress();
+            System.err.println(
+                    "[NetworkManager] no broadcast address found, falling back to " + loopback.getHostAddress());
+            sendPacket(message, loopback, this.port);
+            return;
+        }
+
+        for (InetAddress address : broadcastAddresses) {
+            sendPacket(message, address, this.port);
         }
     }
 
