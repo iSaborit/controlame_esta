@@ -14,16 +14,51 @@ public class ContactListModel {
     }
 
     public void addContact(User user) {
-        if (user == null) return;
+        if (user == null || user.getId() == null) return;
 
+        User existing = null;
         for (User contact : this.activeContacts) {
             if (Objects.equals(contact.getId(), user.getId())) {
-                return; // user already known
+                existing = contact;
+                break;
             }
         }
 
-        this.activeContacts.add(user);
-        notifyContactAdded(user);
+        if (existing == null) {
+            this.activeContacts.add(user);
+            notifyContactAdded(user);
+            return;
+        }
+
+        boolean updated = false;
+
+        if (user.getUsername() != null && !user.getUsername().isEmpty()
+                && !Objects.equals(existing.getUsername(), user.getUsername())) {
+            try {
+                existing.setUsername(user.getUsername());
+                updated = true;
+            } catch (InvalidUsernameException e) {
+                System.err.println("[CONTACT LIST MODEL] Invalid username: " + user.getUsername());
+            }
+        }
+
+        if (user.getIpAddress() != null && !Objects.equals(existing.getIpAddress(), user.getIpAddress())) {
+            existing.setIpAddress(user.getIpAddress());
+            updated = true;
+        }
+
+        if (user.getPort() > 0 && existing.getPort() != user.getPort()) {
+            existing.setPort(user.getPort());
+            updated = true;
+        }
+
+        if (user.getLastSeen() > existing.getLastSeen()) {
+            existing.setLastSeen(user.getLastSeen());
+        }
+
+        if (updated) {
+            notifyContactUpdated(existing);
+        }
     }
 
     public void removeContact(String userId) {
