@@ -18,7 +18,10 @@ public final class HandlerRegistry {
                                                          ContactListModel contactListModel) {
         Map<MessageType, MessageHandler> handlers = new EnumMap<>(MessageType.class);
         handlers.put(MessageType.PRESENCE_ANNOUNCE, new PresenceAnnounceHandler(contactListener));
-        handlers.put(MessageType.DISCOVER_CONTACTS_REQ, new DiscoverHandler(contactListener));
+        handlers.put(MessageType.DISCOVER_CONTACTS_REQ,
+                new DiscoverHandler(networkService, userProfileModel, contactListModel));
+        handlers.put(MessageType.PRESENCE_ACK,
+                new PresenceAckHandler(networkService, userProfileModel));
         handlers.put(MessageType.USERNAME_TAKEN, new UsernameTakenHandler(networkService));
         handlers.put(MessageType.USERNAME_CHANGED, new UsernameChangedHandler(contactListener));
         handlers.put(MessageType.DISCONNECT, new DisconnectHandler(contactListener));
