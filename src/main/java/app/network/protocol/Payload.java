@@ -1,12 +1,14 @@
 package app.network.protocol;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+
+import java.net.InetAddress;
 import java.util.List;
 
 @JsonInclude(JsonInclude.Include.NON_NULL) // Jackson omite los null → paquetes pequeños
 public record Payload(String username, String oldUsername, String newUsername, String by, List<PeerInfo> peers) {
 
-    public record PeerInfo(String id, String username, long lastSeen) {
+    public record PeerInfo(String id, String username, long lastSeen, InetAddress ipAddress, int port) {
     }
 
     public static Payload announce(String username) {
