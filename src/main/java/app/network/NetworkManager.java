@@ -3,10 +3,7 @@ package app.network;
 import app.AppConfig;
 import app.model.User;
 import app.network.handler.MessageHandler;
-import app.network.protocol.MessageEnvelope;
-import app.network.protocol.MessageType;
-import app.network.protocol.PacketCodec;
-import app.network.protocol.UdpCodec;
+import app.network.protocol.*;
 import javafx.application.Platform;
 
 import java.io.IOException;
@@ -34,10 +31,13 @@ public class NetworkManager implements NetworkService {
         void cancel() { todo.forEach(t -> t.cancel(false)); }
     }
 
-    private final AtomicReference<Pending> pendingCheck = new AtomicReference<>();
+    private final AtomicReference<Pending> pendingUsernameCheck = new AtomicReference<>();
 
-    private final ScheduledExecutorService usernameCheckScheduler =
+    private final ScheduledExecutorService requestScheduler =
             Executors.newSingleThreadScheduledExecutor();
+
+    private static final long NO_PENDING_DISCOVER = -1L;
+    private final AtomicLong pendingDiscoverSeq = new AtomicLong(NO_PENDING_DISCOVER);
 
     public NetworkManager(AppConfig config) {
         this.config = config;
@@ -73,11 +73,11 @@ public class NetworkManager implements NetworkService {
 
     @Override
     public void onUsernameTaken(String username, Long inReplyTo) {
-        Pending pending = this.pendingCheck.get();
+        Pending pending = this.pendingUsernameCheck.get();
         if (pending == null) return;
         if (inReplyTo == null || inReplyTo != pending.seq()) return; // not our request
         if (username == null || !username.equalsIgnoreCase(pending.username())) return;
-        if (!this.pendingCheck.compareAndSet(pending, null)) return; // already resolved
+        if (!this.pendingUsernameCheck.compareAndSet(pending, null)) return; // already resolved
 
         pending.cancel(); // ← cancel timeout (and re-send)
         for (NetworkListener listener : listeners) {
@@ -95,9 +95,37 @@ public class NetworkManager implements NetworkService {
         sendPacket(reply, to.getAddress(), to.getPort());
     }
 
+    @Override
+    public void sendPresenceAck(String responderId, String username, InetSocketAddress to, long forSeq, List<Payload.PeerInfo> peers) {
+        if (to == null || peers == null || peers.isEmpty()) return;
+
+        MessageEnvelope reply = MessageEnvelope.ack(responderId, this.seq.incrementAndGet(), forSeq, username, peers);
+        sendPacket(reply, to.getAddress(), to.getPort());
+    }
+
+    @Override
+    public void onPresenceAck(Long inReplyTo, List<User> users) {
+        if (inReplyTo == null || users == null || users.isEmpty()) {
+            return;
+        }
+
+        long pending = this.pendingDiscoverSeq.get();
+        if (pending == NO_PENDING_DISCOVER || inReplyTo != pending) {
+            return;
+        }
+
+        for (User user : users) {
+            if (user == null) continue;
+
+            for (NetworkListener listener : listeners) {
+                Platform.runLater(() -> listener.onPeerAnnounced(user));
+            }
+        }
+    }
+
     private void expireUsernameCheck() {
-        Pending pending = this.pendingCheck.get();
-        if (pending == null || !this.pendingCheck.compareAndSet(pending, null)) {
+        Pending pending = this.pendingUsernameCheck.get();
+        if (pending == null || !this.pendingUsernameCheck.compareAndSet(pending, null)) {
             return;  // already resolved by a USERNAME_TAKEN
         }
         for (NetworkListener listener : listeners) {
@@ -118,7 +146,7 @@ public class NetworkManager implements NetworkService {
 
         for (int i = 0; i < 3; i++) {
             int delay = i * 400;
-            todo.add(this.usernameCheckScheduler.schedule(() -> {
+            todo.add(this.requestScheduler.schedule(() -> {
                         MessageEnvelope request = MessageEnvelope.checkRequest(requesterId, seqNb, username);
                         sendBroadcast(request);
                     },
@@ -126,13 +154,13 @@ public class NetworkManager implements NetworkService {
             ));
         }
 
-        todo.add(this.usernameCheckScheduler.schedule(
+        todo.add(this.requestScheduler.schedule(
                 () -> this.expireUsernameCheck(),
                 config.getUsernameCheckTimeoutMs(), TimeUnit.MILLISECONDS
         ));
 
         // only one check at a time
-        Pending previous = this.pendingCheck.getAndSet(new Pending(username, seqNb, todo));
+        Pending previous = this.pendingUsernameCheck.getAndSet(new Pending(username, seqNb, todo));
         if (previous != null) previous.cancel();
     }
 
@@ -145,7 +173,27 @@ public class NetworkManager implements NetworkService {
 
     @Override
     public void sendDiscoverRequest(String localUserId) {
-        sendBroadcast(MessageEnvelope.discover(localUserId, seq.incrementAndGet()));
+        if (localUserId == null) return;
+
+        long seqNb = this.seq.incrementAndGet();
+        this.pendingDiscoverSeq.set(seqNb);
+
+        MessageEnvelope request = MessageEnvelope.discover(localUserId, seqNb);
+
+        // Send the request 3 times, same method as for check username request:
+        for (int i = 0; i < 3; i++) {
+            int delay = i * 400;
+            this.requestScheduler.schedule(() -> {
+                if (this.pendingDiscoverSeq.get() != seqNb) return;
+                sendBroadcast(request);
+            }, delay, TimeUnit.MILLISECONDS);
+        }
+
+        this.requestScheduler.schedule(
+                () -> this.pendingDiscoverSeq.compareAndSet(seqNb, NO_PENDING_DISCOVER),
+                config.getDiscoveryTimeoutMs(),
+                TimeUnit.MILLISECONDS
+        );
     }
 
     @Override
